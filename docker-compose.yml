@@ -1,0 +1,81 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: smartlogix-mysql
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: smartlogix
+      MYSQL_USER: smartlogix
+      MYSQL_PASSWORD: smartlogix123
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - smartlogix-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend-ventas:
+    build:
+      context: ./back-Ventas_SpringBoot/Springboot-API-REST
+    container_name: backend-ventas
+    restart: on-failure
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_ENDPOINT: mysql
+      DB_PORT: 3306
+      DB_NAME: smartlogix
+      DB_USERNAME: smartlogix
+      DB_PASSWORD: smartlogix123
+    ports:
+      - "8080:8080"
+    networks:
+      - smartlogix-net
+
+  backend-despachos:
+    build:
+      context: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+    container_name: backend-despachos
+    restart: on-failure
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_ENDPOINT: mysql
+      DB_PORT: 3306
+      DB_NAME: smartlogix
+      DB_USERNAME: smartlogix
+      DB_PASSWORD: smartlogix123
+    ports:
+      - "8081:8081"
+    networks:
+      - smartlogix-net
+
+  frontend:
+    build:
+      context: ./front_despacho
+    container_name: smartlogix-frontend
+    restart: always
+    depends_on:
+      - backend-ventas
+      - backend-despachos
+    ports:
+      - "3000:80"
+    networks:
+      - smartlogix-net
+
+volumes:
+  mysql_data:
+
+networks:
+  smartlogix-net:
+    driver: bridge

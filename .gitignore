@@ -1,0 +1,23 @@
+# Node / Frontend
+node_modules/
+dist/
+npm-debug.log*
+
+# Java / Maven
+target/
+*.class
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Variables de entorno
+.env
+.env.*
