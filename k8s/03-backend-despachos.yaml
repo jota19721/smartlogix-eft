@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-despachos
+  namespace: smartlogix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-despachos
+  template:
+    metadata:
+      labels:
+        app: backend-despachos
+    spec:
+      containers:
+        - name: backend-despachos
+          image: 582808359593.dkr.ecr.us-east-1.amazonaws.com/smartlogix-backend-despachos:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+          env:
+            - name: DB_ENDPOINT
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-despachos
+  namespace: smartlogix
+spec:
+  type: ClusterIP
+  selector:
+    app: backend-despachos
+  ports:
+    - port: 8081
+      targetPort: 8081
