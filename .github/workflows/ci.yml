@@ -1,4 +1,4 @@
-name: CI SmartLogix EFT
+name: CI/CD SmartLogix EFT
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  build-test-docker:
-    name: Build, Test and Docker Build
+  build-test-push-ecr:
+    name: Build, Test and Push to Amazon ECR
     runs-on: ubuntu-latest
 
     services:
@@ -35,6 +35,8 @@ jobs:
       DB_NAME: smartlogix
       DB_USERNAME: smartlogix
       DB_PASSWORD: smartlogix123
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
     steps:
       - name: Descargar código del repositorio
@@ -70,11 +72,55 @@ jobs:
         working-directory: front_despacho
         run: npm run build
 
-      - name: Construir imagen Docker backend ventas
-        run: docker build -t smartlogix-backend-ventas:ci ./back-Ventas_SpringBoot/Springboot-API-REST
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Construir imagen Docker backend despachos
-        run: docker build -t smartlogix-backend-despachos:ci ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+      - name: Login en Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Construir imagen Docker frontend
-        run: docker build -t smartlogix-frontend:ci ./front_despacho
+      - name: Definir variables de imagen
+        shell: bash
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com" >> $GITHUB_ENV
+
+      - name: Build imagen backend ventas
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/smartlogix-backend-ventas:$IMAGE_TAG \
+            -t $ECR_REGISTRY/smartlogix-backend-ventas:latest \
+            ./back-Ventas_SpringBoot/Springboot-API-REST
+
+      - name: Push imagen backend ventas
+        run: |
+          docker push $ECR_REGISTRY/smartlogix-backend-ventas:$IMAGE_TAG
+          docker push $ECR_REGISTRY/smartlogix-backend-ventas:latest
+
+      - name: Build imagen backend despachos
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/smartlogix-backend-despachos:$IMAGE_TAG \
+            -t $ECR_REGISTRY/smartlogix-backend-despachos:latest \
+            ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+
+      - name: Push imagen backend despachos
+        run: |
+          docker push $ECR_REGISTRY/smartlogix-backend-despachos:$IMAGE_TAG
+          docker push $ECR_REGISTRY/smartlogix-backend-despachos:latest
+
+      - name: Build imagen frontend
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/smartlogix-frontend:$IMAGE_TAG \
+            -t $ECR_REGISTRY/smartlogix-frontend:latest \
+            ./front_despacho
+
+      - name: Push imagen frontend
+        run: |
+          docker push $ECR_REGISTRY/smartlogix-frontend:$IMAGE_TAG
+          docker push $ECR_REGISTRY/smartlogix-frontend:latest
