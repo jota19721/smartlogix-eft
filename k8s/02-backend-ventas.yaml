@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend-ventas
-          image: 582808359593.dkr.ecr.us-east-1.amazonaws.com/smartlogix-backend-ventas:latest
+          image: 062286809050.dkr.ecr.us-east-1.amazonaws.com/smartlogix-backend-ventas:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

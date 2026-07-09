@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend-despachos
-          image: 582808359593.dkr.ecr.us-east-1.amazonaws.com/smartlogix-backend-despachos:latest
+          image: 062286809050.dkr.ecr.us-east-1.amazonaws.com/smartlogix-backend-despachos:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8081
